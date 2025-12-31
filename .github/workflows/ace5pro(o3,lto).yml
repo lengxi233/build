@@ -222,14 +222,6 @@ jobs:
          sudo sed -i 's/check_defconfig//' ./common/build.config.gki
          cd common
          git add -A && git commit -a -m "BUILD Kernel"
-
-      - name: 启用内核级基带保护
-        if: inputs.baseband_guard
-        run: |
-         cd kernel_workspace
-         wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-         echo 开启BBG
-         sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
          
       - name: 启用LTO
         if: ${{ fromJSON(github.event.inputs.ENABLE_LTO) }}
@@ -311,6 +303,15 @@ jobs:
       - name: 验证内核构建时间
         run: |
          strings kernel_workspace/kernel_platform/common/out/vmlinux | grep "UTC"
+
+      - name: 启用内核级基带保护
+        if: inputs.baseband_guard
+        run: |
+         cd kernel_workspace
+         wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+         echo 开启BBG
+         sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
+         
 
       - name: 打kpm补丁
         if: ${{ fromJSON(github.event.inputs.ENABLE_KPM) }}
