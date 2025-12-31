@@ -47,6 +47,11 @@ on:
         required: false
         default: false
         type: boolean
+      baseband_guard:
+        description: '是否开启内核级基带保护(阻止一切对非用户分区的写入，有效防止格机)'
+        required: true
+        type: boolean
+        default: 'true'
 jobs:
   build:
     runs-on: ubuntu-latest
