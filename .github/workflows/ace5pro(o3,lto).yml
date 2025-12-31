@@ -123,13 +123,13 @@ jobs:
          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
       - name: Inject Baseband Guard
         run: |
-          cd kernel_workspace
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+         cd kernel_workspace
+         wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
 
       - name: Enable CONFIG_BBG
         run: |
-          cd kernel_workspace
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
+         cd kernel_workspace
+         sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
 
          
       - name: Set up SukiSU
