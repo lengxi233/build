@@ -125,7 +125,7 @@ jobs:
       - name: Set up SukiSU
         run: |
          cd kernel_workspace/kernel_platform
-         curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+         curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s tmp-builtin
          cd ./KernelSU
          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
@@ -217,6 +217,38 @@ jobs:
          sudo sed -i 's/check_defconfig//' ./common/build.config.gki
          cd common
          git add -A && git commit -a -m "BUILD Kernel"
+
+      - name: 启用内核级基带保护
+        if: inputs.baseband_guard
+        run: |
+          echo "正在启用启用内核级基带保护支持…"
+          cd kernel_workspace
+          echo "CONFIG_BBG=y" >> ./common/arch/arm64/configs/gki_defconfig
+          cd ./common/security
+          wget https://github.com/cctv18/Baseband-guard/archive/refs/heads/master.zip
+          unzip -q master.zip
+          mv "Baseband-guard-master" baseband-guard
+          printf '\nobj-$(CONFIG_BBG) += baseband-guard/\n' >> ./Makefile
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' ./Kconfig
+          awk '
+          /endmenu/ { last_endmenu_line = NR }
+          { lines[NR] = $0 }
+          END {
+            for (i=1; i<=NR; i++) {
+              if (i == last_endmenu_line) {
+                sub(/endmenu/, "", lines[i]);
+                print lines[i] "source \"security/baseband-guard/Kconfig\""
+                print ""
+                print "endmenu"
+              } else {
+                  print lines[i]
+              }
+            }
+          }
+          ' ./Kconfig > Kconfig.tmp && mv Kconfig.tmp ./Kconfig
+          sed -i 's/selinuxfs.o //g' "./selinux/Makefile"
+          sed -i 's/hooks.o //g' "./selinux/Makefile"
+          cat "./baseband-guard/sepatch.txt" >> "./selinux/Makefile"
 
       - name: 启用LTO
         if: ${{ fromJSON(github.event.inputs.ENABLE_LTO) }}
